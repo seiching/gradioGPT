@@ -1,3 +1,4 @@
+
 import logging
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -8,6 +9,7 @@ load_dotenv()
 
 from queue import Empty, Queue
 from threading import Thread
+inputmsg = ["自上次重開機後所有客戶問的問題"]
 
 import gradio as gr
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -17,11 +19,15 @@ from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 from callback import QueueCallback
 
-MODELS_NAMES = ["gpt-3.5-turbo", "gpt-4"]
+#MODELS_NAMES = ["gpt-3.5-turbo", "gpt-4"]
+MODELS_NAMES = ["gpt-3.5-turbo"]
 DEFAULT_TEMPERATURE = 0.7
 
 ChatHistory = List[str]
-
+# 定义一个新的函数，用于处理点击"显示所有问题"按钮的事件
+def show_all_questions():
+    return '\n'.join(inputmsg)
+	
 logging.basicConfig(
     format="[%(asctime)s %(levelname)s]: %(message)s", level=logging.INFO
 )
@@ -56,6 +62,8 @@ def on_message_button_click(
     logging.info(f"Asking question to GPT, messages={messages}")
     # let's add the messages to our stuff
     messages.append(HumanMessage(content=message))
+	#新增加入inputmsg
+    inputmsg.append(message)
     chatbot_messages.append((message, ""))
     # this is a little wrapper we need cuz we have to add the job_done
     def task():
@@ -113,22 +121,22 @@ def on_apply_settings_button_click(
 # some css why not, "borrowed" from https://huggingface.co/spaces/ysharma/Gradio-demo-streaming/blob/main/app.py
 with gr.Blocks(
     css="""#col_container {width: 700px; margin-left: auto; margin-right: auto;}
-                #chatbot {height: 400px; overflow: auto;}"""
+                #chatbot {height: 400px; overflow: auto;}""",title="可以用自己資料回答的gpt"
 ) as demo:
     system_prompt = gr.State(default_system_prompt)
     # here we keep our state so multiple user can use the app at the same time!
     messages = gr.State([SystemMessage(content=default_system_prompt)])
     # same thing for the chat, we want one chat per use so callbacks are unique I guess
     chat = gr.State(None)
-
+    
     with gr.Column(elem_id="col_container"):
-        gr.Markdown("# Welcome to GradioGPT! 🌟🚀")
+        gr.Markdown("# 歡迎使用可以用自己資料回答的GPT! 🌟🚀")
         gr.Markdown(
-            "An easy to use template. It comes with state and settings managment"
+            "可以設定GPT的角色及要回答的問題範圍太資料不要超過1000字GPT 3.5有限制"
         )
         with gr.Column():
             system_prompt_area = gr.TextArea(
-                default_system_prompt, lines=4, label="system prompt", interactive=True
+                default_system_prompt, lines=4, label="個人化指令及希望回答的範圍", interactive=True
             )
             # we store the value into the state to avoid re rendering of the area
             system_prompt_area.input(
@@ -136,18 +144,20 @@ with gr.Blocks(
                 inputs=[system_prompt_area],
                 outputs=[system_prompt],
             )
-            system_prompt_button = gr.Button("Set")
+            system_prompt_button = gr.Button("設定")
+           
+          
 
         chatbot = gr.Chatbot()
         with gr.Column():
-            message = gr.Textbox(label="chat input")
+            message = gr.Textbox(label="輸入的問題")
             message.submit(
                 on_message_button_click,
                 [chat, message, chatbot, messages],
                 [chat, message, chatbot, messages],
                 queue=True,
             )
-            message_button = gr.Button("Submit", variant="primary")
+            message_button = gr.Button("送出", variant="primary")
             message_button.click(
                 on_message_button_click,
                 [chat, message, chatbot, messages],
@@ -155,14 +165,14 @@ with gr.Blocks(
             )
         with gr.Row():
             with gr.Column():
-                clear_button = gr.Button("Clear")
+                clear_button = gr.Button("清除")
                 clear_button.click(
                     on_clear_button_click,
                     [system_prompt],
                     [message, chatbot, messages],
                     queue=False,
                 )
-            with gr.Accordion("Settings", open=False):
+            with gr.Accordion("參數設定", open=False):
                 model_name = gr.Dropdown(
                     choices=MODELS_NAMES, value=MODELS_NAMES[0], label="model"
                 )
@@ -171,10 +181,10 @@ with gr.Blocks(
                     maximum=1.0,
                     value=0.7,
                     step=0.1,
-                    label="temperature",
+                    label="變化度數值小回答一致性高",
                     interactive=True,
                 )
-                apply_settings_button = gr.Button("Apply")
+                apply_settings_button = gr.Button("套用")
                 apply_settings_button.click(
                     on_apply_settings_button_click,
                     [system_prompt, model_name, temperature],
@@ -186,6 +196,10 @@ with gr.Blocks(
             [system_prompt, model_name, temperature],
             [chat, message, chatbot, messages],
         )
+        with gr.Row():
+            show_questions_btn = gr.Button("顯示問過的問題")
+            show_questions_output = gr.TextArea(label="所有問題")
+            show_questions_btn.click(show_all_questions, outputs=[show_questions_output])
 
 demo.queue()
-demo.launch()
+demo.launch(share=True,server_name="0.0.0.0")
