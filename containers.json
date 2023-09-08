@@ -1,0 +1,8 @@
+{
+    "laplacegpt": {
+        "image": ":laplacegpt.laplacegpt.9",
+        "ports": {
+            "7860": "HTTP"
+        }
+    }
+}
