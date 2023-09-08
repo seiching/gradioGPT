@@ -25,17 +25,8 @@ A perfect starting template for your amazing new shiny GPT application that come
 
 ## 💻 Installation
 
-Create a `.env` file with your OpenAI API Key
-
-```bash
-echo "OPENAI_API_KEY=<YOUR_API_KEY>" > .env
-```
-
-You `.env` should look like
-
-```
-OPENAI_API_KEY=<YOUR_KEY>
-```
+將Dockerfile.example中放入你的 OPENAI_API_KEY,並更名為Dockerfile
+ENV OPENAI_API_KEY= 
 
 ### Virtual Enviroment
 
