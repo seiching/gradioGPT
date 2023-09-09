@@ -53,19 +53,23 @@ Easy peasy
 
 ```bash
 docker build -t gradio-app .
-docker run --rm -it -p 7860:7860 \
-    -e GRADIO_SERVER_NAME=0.0.0.0 \
-    -v $(pwd)/.env:/app/.env \
-    gradio-app
+docker run --rm -it -p 7860:7860 gradio-app
 ```
 
-Then, navigate to `http://0.0.0.0:7860/`
+Then, navigate to `http://localhost:7860/`
 
 You can also change the python version used (defaults to `3.11`) by
 
 ```bash
 docker build --build-arg PYTHON_VERSION=3.9 -t gradio-app .
-```
+### 佈建到aws`
+create container 名字要一樣如gradio-app
+cd …
+push container
+aws lightsail push-container-image --service-name gradio-appt --label gradio-app --image gradio-app``
+deploy container
+cd gradioGPT
+aws lightsail create-container-service-deployment --service-name gradio-appt --containers file://containers.json --public-endpoint file://public-endpoint.json
 
 ## 🏆 contribution
 
